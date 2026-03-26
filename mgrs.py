@@ -238,6 +238,13 @@ def mgrs_to_latlon(mgrs):
     # Search the 2,000 km northing cycles until the latitude falls inside the band.
     for _ in range(6):
         lat, lon = utm_to_latlon(zone, northern, e, n)
+        in_band = lower_lat <= lat <= upper_lat if band == 'X' else lower_lat <= lat < upper_lat
+        if in_band:
+            return lat, lon
+
+        # Only cells whose center falls just outside the band need the extra
+        # edge checks; this preserves the band-boundary fix without making the
+        # common case pay for three UTM inversions.
         south_lat, _ = utm_to_latlon(zone, northern, e, n - cell / 2)
         north_lat, _ = utm_to_latlon(zone, northern, e, n + cell / 2)
         cell_min_lat = min(south_lat, north_lat)

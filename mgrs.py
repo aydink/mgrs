@@ -1,5 +1,9 @@
-# mgrs.py
+"""Pure Python MGRS <-> latitude/longitude conversions."""
+
 import math
+import argparse
+import random
+import time
 
 # --- WGS84 ---
 A = 6378137.0
@@ -259,11 +263,6 @@ def mgrs_to_latlon(mgrs):
             n -= 2000000
 
     raise ValueError(f"Could not align MGRS northing for band {band}")
-
-
-
-
-# Test cases
 def test():
     tests = [
         (0.0, -177.0),       # zone 1 regression
@@ -287,14 +286,8 @@ def test():
         assert abs(lat - lat2) < 1e-5
         assert abs(lon - lon2) < 2e-5
 
+    print("tests passed")
 
-## create a bechmark function for 1 million mgrs conversion
-import random
-import time
-
-# --- reuse your functions ---
-# latlon_to_mgrs
-# mgrs_to_latlon
 
 def random_latlon():
     # MGRS valid range (UTM coverage)
@@ -352,6 +345,61 @@ def benchmark_mgrs(n=1_000_000, precision=5, validate=False):
     print(f"Overall throughput: {2*n / total_time:,.0f} ops/sec")
 
 
+def main():
+    parser = argparse.ArgumentParser(
+        description="Pure Python MGRS <-> latitude/longitude conversions."
+    )
+    parser.add_argument("--test", action="store_true", help="Run regression tests.")
+    parser.add_argument(
+        "--benchmark",
+        action="store_true",
+        help="Run the conversion benchmark.",
+    )
+    parser.add_argument(
+        "--count",
+        type=int,
+        default=1_000_000,
+        help="Number of benchmark points to generate.",
+    )
+    parser.add_argument(
+        "--precision",
+        type=int,
+        default=5,
+        choices=range(1, 6),
+        help="MGRS precision digits per axis (1-5).",
+    )
+    parser.add_argument(
+        "--validate",
+        action="store_true",
+        help="Validate benchmark round-trip accuracy.",
+    )
+    parser.add_argument("--lat", type=float, help="Latitude to encode as MGRS.")
+    parser.add_argument("--lon", type=float, help="Longitude to encode as MGRS.")
+    parser.add_argument("--mgrs", help="MGRS string to decode.")
+
+    args = parser.parse_args()
+
+    if args.test:
+        test()
+        return
+
+    if args.benchmark:
+        benchmark_mgrs(n=args.count, precision=args.precision, validate=args.validate)
+        return
+
+    if args.mgrs:
+        lat, lon = mgrs_to_latlon(args.mgrs)
+        print(f"lat={lat:.12f}, lon={lon:.12f}")
+        return
+
+    if args.lat is not None or args.lon is not None:
+        if args.lat is None or args.lon is None:
+            parser.error("--lat and --lon must be provided together")
+        print(latlon_to_mgrs(args.lat, args.lon, args.precision))
+        return
+
+    parser.print_help()
+
+
 if __name__ == "__main__":
-    benchmark_mgrs(n=1_000_000, precision=5, validate=False)
-    #test()
+    main()

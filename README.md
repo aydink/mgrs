@@ -26,6 +26,12 @@ cd mgrs
 
 No dependency installation is required.
 
+To install it as a local package with the CLI entrypoint:
+
+```bash
+python3 -m pip install .
+```
+
 ## Library usage
 
 ### Encode latitude/longitude to MGRS

@@ -62,6 +62,13 @@ def latitude_band(lat):
     return LAT_BANDS[int((lat + 80) / 8)]
 
 
+def band_latitude_range(band):
+    idx = LAT_BANDS.index(band)
+    lower = -80 + idx * 8
+    upper = 84 if band == 'X' else lower + 8
+    return lower, upper
+
+
 def truncate(v, precision):
     factor = 10 ** (5 - precision)
     return int(v // factor)
@@ -207,28 +214,44 @@ def mgrs_to_latlon(mgrs):
     if len(digits) % 2 != 0:
         raise ValueError("MGRS numeric component must have even length")
 
-    e = int(digits[:precision]) * 10**(5 - precision)
-    n = int(digits[precision:]) * 10**(5 - precision)
+    cell = 10 ** (5 - precision)
+    e = int(digits[:precision]) * cell
+    n = int(digits[precision:]) * cell
 
     col_set = (zone - 1) % 3
     row_set = (zone - 1) % 2
 
     e += (EASTING_SETS[col_set].index(col_letter) + 1) * 100000
     n += NORTHING_SETS[row_set].index(row_letter) * 100000
+    e += cell / 2
+    n += cell / 2
 
     northern = band >= 'N'
 
     # --- NGA band alignment ---
     min_n = BAND_MIN_NORTHING[band]
-    while n < min_n:
+    while n + cell / 2 < min_n:
         n += 2000000
 
-    # Ensure correct band
-    while True:
+    lower_lat, upper_lat = band_latitude_range(band)
+
+    # Search the 2,000 km northing cycles until the latitude falls inside the band.
+    for _ in range(6):
         lat, lon = utm_to_latlon(zone, northern, e, n)
-        if latitude_band(lat) == band:
+        south_lat, _ = utm_to_latlon(zone, northern, e, n - cell / 2)
+        north_lat, _ = utm_to_latlon(zone, northern, e, n + cell / 2)
+        cell_min_lat = min(south_lat, north_lat)
+        cell_max_lat = max(south_lat, north_lat)
+
+        if cell_max_lat >= lower_lat and cell_min_lat <= upper_lat:
             return lat, lon
-        n += 2000000
+
+        if lat < lower_lat:
+            n += 2000000
+        else:
+            n -= 2000000
+
+    raise ValueError(f"Could not align MGRS northing for band {band}")
 
 
 
@@ -237,6 +260,7 @@ def mgrs_to_latlon(mgrs):
 def test():
     tests = [
         (0.0, -177.0),       # zone 1 regression
+        (24.0000053576329, -120.13017064707174),  # band-boundary regression
         (41.0082, 28.9784),   # Istanbul
         (39.9208, 32.8541),   # Ankara
         (48.8582, 2.2945),    # Eiffel

@@ -20,7 +20,7 @@ This repository provides a single-file library for:
 Clone the repository and import `mgrs.py` directly:
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/aydink/mgrs.git
 cd mgrs
 ```
 

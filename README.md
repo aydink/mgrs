@@ -17,7 +17,13 @@ This repository provides a single-file library for:
 
 ## Installation
 
-Clone the repository and import `mgrs.py` directly:
+Install from PyPI:
+
+```bash
+python3 -m pip install mgrs-pure-python
+```
+
+Or clone the repository and import `mgrs.py` directly:
 
 ```bash
 git clone https://github.com/aydink/mgrs.git
@@ -69,6 +75,14 @@ print(lat2, lon2)
 
 ## Command-line usage
 
+If installed from PyPI, use:
+
+```bash
+mgrs --lat 41.0082 --lon 28.9784 --precision 5
+```
+
+The examples below also work directly from the repo checkout:
+
 ### Encode coordinates
 
 ```bash
@@ -115,3 +129,9 @@ python3 mgrs.py --benchmark --count 100000 --precision 5 --validate
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+## PyPI Publishing
+
+This repository includes a GitHub Actions workflow for PyPI Trusted Publishing.
+After configuring the project on PyPI, publishing a GitHub release will upload
+the package automatically.
